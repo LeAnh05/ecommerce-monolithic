@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. Bảng vai trò
+model Role {
+  roleid   Int    @id @default(autoincrement())
+  rolename String
+
+  users User[]
+}
+
+// 2. Bảng hạng thành viên
+model MemberShip {
+  mid   Int    @id @default(autoincrement())
+  mname String
+  score Int    @default(10)
+
+  users User[]
+}
+
+// 3. Bảng người dùng
+model User {
+  uid      Int    @id @default(autoincrement())
+  username String @unique
+  fullname String
+  password String
+  roleid   Int
+  mid      Int
+
+  role       Role       @relation(fields: [roleid], references: [roleid])
+  membership MemberShip @relation(fields: [mid], references: [mid])
+  orders     Order[]
+}
+
+// 4. Bảng sản phẩm
+model Product {
+  pid      Int    @id @default(autoincrement())
+  pname    String
+  price    Decimal @db.Decimal(12, 2)
+  quantity Int
+
+  orderDetails OrderDetail[]
+}
+
+// 5. Bảng đơn hàng
+model Order {
+  oid      Int      @id @default(autoincrement())
+  uid      Int
+  createat DateTime @default(now())
+
+  user         User          @relation(fields: [uid], references: [uid])
+  orderDetails OrderDetail[]
+  shipments    Shipment[]
+}
+
+// 6. Bảng chi tiết đơn hàng
+model OrderDetail {
+  oid        Int
+  pid        Int
+  qty        Int
+  unit_price Decimal @db.Decimal(12, 2)
+
+  order   Order   @relation(fields: [oid], references: [oid])
+  product Product @relation(fields: [pid], references: [pid])
+
+  @@id([oid, pid])
+}
+
+// 7. Bảng vận chuyển
+model Shipment {
+  shipid Int    @id @default(autoincrement())
+  oid    Int
+  status String @default("PENDING")
+
+  order Order @relation(fields: [oid], references: [oid])
+}
